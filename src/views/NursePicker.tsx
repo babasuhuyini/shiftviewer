@@ -1,6 +1,8 @@
 import { useMemo, useState } from 'react';
 import { Callout, PrivacyNote, TopBar } from '../components/ui';
 import { CheckIcon, SearchIcon, UserIcon } from '../components/Icons';
+import { Avatar } from '../components/Avatar';
+import { WelcomeMessage } from '../components/WelcomeMessage';
 import { duplicateNames, personLabel } from '../lib/roster';
 import type { Person, Roster, SelectedNurse } from '../lib/types';
 
@@ -29,6 +31,7 @@ export function NursePicker({
     <>
       <TopBar title="Choose your name" back={current ? { href: '#/', label: 'Back to my shifts' } : undefined} />
       <main className="page page-narrow" id="main">
+        <WelcomeMessage />
         <p className="step-lead">
           Pick your name from this roster to see your shifts. This is remembered on this device only.
         </p>
@@ -64,8 +67,11 @@ export function NursePicker({
           {list.map((p) => (
             <li key={p.id}>
               <button type="button" onClick={() => onPick(p)} aria-current={current?.id === p.id ? 'true' : undefined}>
-                <span className="pp-name">{p.name}</span>
-                <span className="pp-meta">{personLabel(p, dupes)}</span>
+                <Avatar name={p.name} />
+                <span className="pp-text">
+                  <span className="pp-name">{p.name}</span>
+                  <span className="pp-meta">{personLabel(p, dupes)}</span>
+                </span>
               </button>
             </li>
           ))}

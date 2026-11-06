@@ -1,11 +1,29 @@
 import { useState } from 'react';
+import { Avatar, AvatarStack } from '../components/Avatar';
 import { Callout, PrivacyNote, Segmented, TopBar } from '../components/ui';
-import { CalendarIcon, ChevronRight, ListIcon, SettingsIcon, UsersIcon } from '../components/Icons';
+import { CalendarIcon, ChevronRight, ClockIcon, FileIcon, ListIcon, SettingsIcon, ToneIcon, UploadIcon, UserIcon, UsersIcon } from '../components/Icons';
 import { overnightNote, ShiftChip, timeRange } from '../components/Shift';
-import { formatDayMonth, formatLong, formatMonthYear, formatRange, localDateOf, parseISO, relativeLabel, todayISO, WEEKDAYS_SHORT, weekdayOf } from '../lib/dates';
-import { assignmentsOn, personLabel, duplicateNames, rangesOf } from '../lib/roster';
+import { WelcomeMessage } from '../components/WelcomeMessage';
+import {
+  addDays,
+  diffDays,
+  formatDayMonth,
+  formatLong,
+  formatMedium,
+  formatMonthYear,
+  formatRange,
+  localDateOf,
+  MONTHS,
+  parseISO,
+  relativeLabel,
+  todayISO,
+  WEEKDAYS,
+  WEEKDAYS_SHORT,
+  weekdayOf,
+} from '../lib/dates';
+import { assignmentsOn, duplicateNames, personLabel, rangesOf, toneOf } from '../lib/roster';
 import { getPrefs, updatePrefs } from '../lib/storage';
-import type { Assignment, Person, Roster } from '../lib/types';
+import type { Assignment, ISODate, Person, Roster } from '../lib/types';
 import { Agenda } from './Agenda';
 import { MonthCalendar } from './MonthCalendar';
 
@@ -15,45 +33,76 @@ export function colleaguesOn(roster: Roster, me: Person, a: Assignment): Person[
   );
 }
 
+function markText(a: Assignment): string {
+  switch (a.kind) {
+    case 'shift':
+      return a.code && a.code.length <= 3 ? a.code : a.label.slice(0, 3);
+    case 'off':
+      return 'Off';
+    case 'leave':
+      return 'Leave';
+    case 'unassigned':
+      return '–';
+    default:
+      return '?';
+  }
+}
+
 export function Dashboard({ roster, me }: { roster: Roster; me: Person }) {
   const today = todayISO();
   const [view, setView] = useState<'calendar' | 'agenda'>(() => getPrefs().view ?? 'calendar');
   const mine = roster.entries[me.id] ?? [];
-  const shifts = mine.filter((a) => a.kind === 'shift' && a.date >= today);
+  const ahead = mine.filter((a) => a.date >= today);
+  const shifts = ahead.filter((a) => a.kind === 'shift');
   const next = shifts[0];
-  const later = shifts.slice(1, 7);
-  const todayNonShift = mine.filter((a) => a.date === today && a.kind !== 'shift');
-  const offRanges = rangesOf(mine.filter((a) => (a.kind === 'off' || a.kind === 'leave') && a.date >= today)).slice(0, 8);
-  const unknownAhead = mine.filter((a) => a.kind === 'unknown' && a.date >= today);
+  const later = shifts.slice(1, 6);
+  const offRanges = rangesOf(ahead.filter((a) => a.kind === 'off' || a.kind === 'leave')).slice(0, 6);
+  const unknownAhead = ahead.filter((a) => a.kind === 'unknown');
   const { start, end } = roster.period;
   const ended = today > end;
   const notStarted = today < start;
+  const endsSoon = !ended && diffDays(today, end) <= 5;
   const dupes = duplicateNames(roster);
   const label = personLabel(me, dupes);
   const { y, m } = parseISO(start);
-
   const colleagues = next ? colleaguesOn(roster, me, next) : [];
+
+  const stats = {
+    shifts: shifts.length,
+    off: new Set(ahead.filter((a) => a.kind === 'off').map((a) => a.date)).size,
+    leave: new Set(ahead.filter((a) => a.kind === 'leave').map((a) => a.date)).size,
+  };
+
+  // Seven days from today (or from the roster start if it hasn't begun).
+  const stripStart: ISODate = notStarted ? start : today;
+  const week: ISODate[] = ended ? [] : Array.from({ length: 7 }, (_, i) => addDays(stripStart, i));
 
   return (
     <>
       <TopBar
         title="My Shifts"
         right={
-          <a className="roster-chip" href="#/roster" aria-label="Roster details and settings">
+          <a className="roster-chip" href="#/roster" aria-label={`Roster for ${formatMonthYear(y, m)} — details and settings`}>
             <CalendarIcon size={16} />
-            <span>{formatMonthYear(y, m)}</span>
+            <span>{MONTHS[m - 1].slice(0, 3)} {y}</span>
             <SettingsIcon size={16} />
           </a>
         }
       />
       <main className="page dash" id="main">
-        <p className="whoami">
-          Shifts for <strong>{me.name}</strong>
-          {label && <span className="muted"> · {label}</span>}{' '}
-          <a href="#/nurse" className="link">
+        <WelcomeMessage />
+
+        <div className="whoami">
+          <Avatar name={me.name} />
+          <p>
+            <span className="muted">Showing shifts for</span>
+            <strong>{me.name}</strong>
+            {label && <span className="muted whoami-meta">{label}</span>}
+          </p>
+          <a href="#/nurse" className="btn btn-small btn-soft">
             Change
           </a>
-        </p>
+        </div>
 
         <div className="dash-grid">
           <div className="dash-main">
@@ -64,50 +113,144 @@ export function Dashboard({ roster, me }: { roster: Roster; me: Person }) {
             )}
 
             {next ? (
-              <a className="hero" href={`#/day/${next.date}`} aria-label={`Next shift: ${next.label}, ${formatLong(next.date)}. Open day details.`}>
-                <span className="hero-eyebrow">{next.date === today ? 'Today' : `Next shift · ${relativeLabel(next.date, today)}`}</span>
-                <span className="hero-shift">
+              <section className={`hero wash-${toneOf(next)}`} aria-labelledby="next-shift-label">
+                <div className="hero-top">
+                  <span className="hero-eyebrow" id="next-shift-label">
+                    Your next shift
+                  </span>
+                  <span className="pill">{relativeLabel(next.date, today)}</span>
+                </div>
+                <h2 className="hero-date">
+                  <span className="hero-weekday">{WEEKDAYS[weekdayOf(next.date)]}</span>
+                  <span>
+                    {Number(next.date.slice(8))} {MONTHS[parseISO(next.date).m - 1]}
+                  </span>
+                </h2>
+                <div className="hero-shift">
                   <ShiftChip a={next} size="lg" />
-                </span>
-                <span className="hero-date">{formatLong(next.date)}</span>
-                <span className="hero-time">{timeRange(next) || 'Shift times not set'}</span>
-                {overnightNote(next) && <span className="hero-note">{overnightNote(next)}</span>}
-                <span className="hero-colleagues">
-                  <UsersIcon size={18} />
+                </div>
+                <p className={`hero-time${timeRange(next) ? '' : ' is-missing'}`}>
+                  <ClockIcon size={18} />
+                  {timeRange(next) || 'Start and end times aren’t on the roster'}
+                </p>
+                {overnightNote(next) && <p className="hero-note">{overnightNote(next)}</p>}
+
+                <div className="hero-team">
                   {colleagues.length ? (
-                    <span>
-                      With {colleagues.slice(0, 3).map((p) => p.name).join(', ')}
-                      {colleagues.length > 3 ? ` +${colleagues.length - 3} more` : ''}
-                    </span>
+                    <>
+                      <AvatarStack names={colleagues.map((p) => p.name)} />
+                      <p>
+                        <span className="muted">Working with </span>
+                        {colleagues.slice(0, 2).map((p) => p.name).join(', ')}
+                        {colleagues.length > 2 && ` and ${colleagues.length - 2} more`}
+                      </p>
+                    </>
                   ) : (
-                    <span>No one else listed on this shift</span>
+                    <>
+                      <UsersIcon size={18} />
+                      <p className="muted">No one else is listed on this shift.</p>
+                    </>
                   )}
-                  <ChevronRight size={18} />
-                </span>
-              </a>
+                </div>
+                <a className="btn btn-primary hero-cta" href={`#/day/${next.date}`}>
+                  See everyone working this day <ChevronRight size={18} />
+                </a>
+              </section>
             ) : (
-              <div className="hero hero-empty">
-                <span className="hero-eyebrow">Next shift</span>
-                <span className="hero-empty-title">{ended ? 'This roster has ended' : 'No more shifts in this roster'}</span>
-                <span className="hero-date">
+              <section className="hero hero-empty" aria-labelledby="no-shift">
+                <span className="hero-eyebrow">Your next shift</span>
+                <h2 className="hero-empty-title" id="no-shift">
+                  {ended ? 'This roster has ended' : 'No more shifts in this roster'}
+                </h2>
+                <p className="hero-empty-text">
                   {ended
                     ? `It covered ${formatRange(start, end)}. Import the next roster when it’s available.`
-                    : `You have no shifts listed between today and ${formatDayMonth(end)}.`}
-                </span>
+                    : `You have no shifts listed between today and ${formatDayMonth(end)}. Enjoy the rest.`}
+                </p>
                 <a className="btn btn-primary" href="#/import">
-                  Import a newer roster
+                  <UploadIcon size={18} /> Import a newer roster
                 </a>
-              </div>
+              </section>
             )}
 
-            {todayNonShift.length > 0 && next?.date !== today && (
-              <a className="today-line" href={`#/day/${today}`}>
-                <span className="muted">Today</span>
-                {todayNonShift.map((a, i) => (
-                  <ShiftChip key={i} a={a} size="sm" />
-                ))}
-                <ChevronRight size={16} />
-              </a>
+            {week.length > 0 && (
+              <section className="card week-card" aria-labelledby="week-title">
+                <div className="card-head">
+                  <h2 id="week-title" className="card-title">
+                    {notStarted ? 'First week' : 'Next 7 days'}
+                  </h2>
+                </div>
+                <ol className="week-strip">
+                  {week.map((date) => {
+                    const inRange = date >= start && date <= end;
+                    const list = inRange ? assignmentsOn(roster, me.id, date) : [];
+                    const first = list[0];
+                    const tone = first ? toneOf(first) : 'none';
+                    const desc = !inRange ? 'outside this roster' : first ? list.map((a) => (a.kind === 'unknown' ? `unrecognised “${a.raw}”` : a.label)).join(' and ') : 'not listed';
+                    return (
+                      <li key={date}>
+                        {inRange ? (
+                          <a
+                            href={`#/day/${date}`}
+                            className={`week-day tone-${tone}${date === today ? ' is-today' : ''}`}
+                            aria-label={`${formatLong(date)}${date === today ? ' (today)' : ''}: ${desc}`}
+                          >
+                            <span className="wd-name">{date === today ? 'Today' : WEEKDAYS_SHORT[weekdayOf(date)]}</span>
+                            <span className="wd-num">{Number(date.slice(8))}</span>
+                            <span className="wd-mark">
+                              {first ? (
+                                <>
+                                  <ToneIcon tone={toneOf(first)} size={13} />
+                                  <span>{markText(first)}</span>
+                                </>
+                              ) : (
+                                <span>–</span>
+                              )}
+                            </span>
+                          </a>
+                        ) : (
+                          <span className="week-day is-outside" aria-label={`${formatLong(date)}: outside this roster`}>
+                            <span className="wd-name">{WEEKDAYS_SHORT[weekdayOf(date)]}</span>
+                            <span className="wd-num">{Number(date.slice(8))}</span>
+                            <span className="wd-mark">
+                              <span>—</span>
+                            </span>
+                          </span>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ol>
+              </section>
+            )}
+
+            {!ended && (
+              <dl className="glance" aria-label="Left in this roster">
+                <div>
+                  <dt>Shifts left</dt>
+                  <dd>{stats.shifts}</dd>
+                </div>
+                <div>
+                  <dt>Days off</dt>
+                  <dd>{stats.off}</dd>
+                </div>
+                <div>
+                  <dt>Leave days</dt>
+                  <dd>{stats.leave}</dd>
+                </div>
+              </dl>
+            )}
+
+            {endsSoon && (
+              <Callout tone="info" title="This roster is nearly over">
+                <p>
+                  It ends on {formatMedium(end)}.{' '}
+                  <a className="link" href="#/import">
+                    Import the next roster
+                  </a>{' '}
+                  when it’s available.
+                </p>
+              </Callout>
             )}
 
             {unknownAhead.length > 0 && (
@@ -185,32 +328,59 @@ export function Dashboard({ roster, me }: { roster: Roster; me: Person }) {
             </section>
           </div>
 
-          <section className="card dash-side" aria-labelledby="schedule">
-            <div className="card-head">
-              <h2 id="schedule" className="card-title">
-                Schedule
-              </h2>
-              <Segmented
-                label="Schedule view"
-                value={view}
-                onChange={(v) => {
-                  setView(v);
-                  updatePrefs({ view: v });
-                }}
-                options={[
-                  { value: 'calendar', label: <><CalendarIcon size={16} /> Month</> },
-                  { value: 'agenda', label: <><ListIcon size={16} /> List</> },
-                ]}
-              />
-            </div>
-            {view === 'calendar' ? <MonthCalendar roster={roster} me={me} today={today} /> : <Agenda roster={roster} me={me} today={today} />}
-          </section>
+          <div className="dash-side">
+            <section className="card" aria-labelledby="schedule">
+              <div className="card-head">
+                <h2 id="schedule" className="card-title">
+                  {formatMonthYear(y, m)}
+                </h2>
+                <Segmented
+                  label="Schedule view"
+                  value={view}
+                  onChange={(v) => {
+                    setView(v);
+                    updatePrefs({ view: v });
+                  }}
+                  options={[
+                    { value: 'calendar', label: <><CalendarIcon size={16} /> Month</> },
+                    { value: 'agenda', label: <><ListIcon size={16} /> List</> },
+                  ]}
+                />
+              </div>
+              {view === 'calendar' ? <MonthCalendar roster={roster} me={me} today={today} /> : <Agenda roster={roster} me={me} today={today} />}
+            </section>
+
+            <section className="card roster-card" aria-labelledby="roster-title">
+              <div className="roster-card-head">
+                <span className="roster-card-icon" aria-hidden="true">
+                  <FileIcon size={20} />
+                </span>
+                <div>
+                  <h2 id="roster-title" className="card-title">
+                    {roster.title ?? roster.fileName}
+                  </h2>
+                  <p className="muted">
+                    {formatRange(start, end)} · imported {formatDayMonth(localDateOf(roster.importedAt))}
+                    {ended && ' · ended'}
+                  </p>
+                </div>
+              </div>
+              <div className="roster-actions">
+                <a className="btn btn-soft" href="#/import">
+                  <UploadIcon size={18} /> Import newer roster
+                </a>
+                <a className="btn btn-soft" href="#/nurse">
+                  <UserIcon size={18} /> Change name
+                </a>
+                <a className="btn btn-ghost" href="#/roster">
+                  <SettingsIcon size={18} /> Roster details
+                </a>
+              </div>
+            </section>
+          </div>
         </div>
 
         <footer className="dash-foot">
-          <p>
-            {roster.title ?? roster.fileName} · {formatRange(start, end)} · imported {formatDayMonth(localDateOf(roster.importedAt))}
-          </p>
           <PrivacyNote />
         </footer>
       </main>

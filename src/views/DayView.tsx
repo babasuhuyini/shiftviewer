@@ -1,3 +1,4 @@
+import { Avatar } from '../components/Avatar';
 import { Callout, TopBar } from '../components/ui';
 import { ChevronLeft, ChevronRight, SwapIcon } from '../components/Icons';
 import { overnightNote, ShiftChip, timeRange } from '../components/Shift';
@@ -154,6 +155,7 @@ function PeopleList({ group, me, dupes, showRaw }: { group: DayGroup; me: Person
       {sorted.map(({ person, a }) => (
         <li key={person.id} className={person.id === me.id ? 'is-me' : ''}>
           <span className="people-name">
+            <Avatar name={person.name} size="sm" />
             {person.name}
             {person.id === me.id && <span className="you-badge">You</span>}
           </span>

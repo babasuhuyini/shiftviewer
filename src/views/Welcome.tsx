@@ -1,11 +1,13 @@
-import { CalendarIcon, LockIcon, SwapIcon, UploadIcon, UsersIcon } from '../components/Icons';
+import { CalendarIcon, HeartIcon, LockIcon, SwapIcon, UploadIcon, UsersIcon } from '../components/Icons';
+import { WelcomeMessage } from '../components/WelcomeMessage';
 
 export function Welcome() {
   return (
     <main className="page page-narrow welcome" id="main">
+      <WelcomeMessage />
       <div className="welcome-hero">
         <span className="welcome-mark" aria-hidden="true">
-          <CalendarIcon size={30} />
+          <HeartIcon size={30} />
         </span>
         <h1>My Shifts</h1>
         <p className="welcome-lead">Your department roster, made easy to read — on your own device.</p>

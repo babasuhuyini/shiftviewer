@@ -1,0 +1,16 @@
+node_modules/
+dist/
+coverage/
+*.log
+.DS_Store
+Thumbs.db
+
+# Never commit real rosters. Roster files stay on the device.
+*.pdf
+*.docx
+*.doc
+*.xlsx
+*.xls
+*.xlsm
+*.csv
+~$*

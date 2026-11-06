@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@fontsource-variable/fraunces": "^5.2.8",
     "jszip": "^3.10.1",
     "papaparse": "^5.5.3",
     "pdfjs-dist": "^5.3.31",

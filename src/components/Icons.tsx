@@ -160,6 +160,23 @@ export const SettingsIcon = (p: P) => (
   </Svg>
 );
 
+export const HeartIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.7l-1-1.1a5.5 5.5 0 0 0-7.8 7.8l1 1.1L12 21l7.8-7.5 1-1.1a5.5 5.5 0 0 0 0-7.8z" />
+  </Svg>
+);
+export const CloseIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M18 6L6 18M6 6l12 12" />
+  </Svg>
+);
+export const SparkleIcon = (p: P) => (
+  <Svg {...p}>
+    <path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />
+    <path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z" />
+  </Svg>
+);
+
 export function ToneIcon({ tone, size = 18 }: { tone: Tone; size?: number }) {
   switch (tone) {
     case 'morning':
