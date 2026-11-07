@@ -1,16 +1,19 @@
+import type { Appearance, Palette } from './theme';
 import type { BlankMeaning, CodeDef, Roster, SelectedNurse } from './types';
 
 /*
  * Everything is stored only in this browser on this device:
  *  - the confirmed roster in IndexedDB,
- *  - small preferences (selected nurse, shift-code settings) in localStorage.
- * Nothing is sent anywhere. "Remove roster" deletes the roster and the selected nurse.
+ *  - small preferences (selected nurse, shift-code settings, appearance) in localStorage.
+ * Nothing is sent anywhere. "Remove roster" deletes the roster and the selected nurse only;
+ * appearance and palette choices are kept because they contain no roster data.
  */
 
 const DB_NAME = 'my-shifts';
 const STORE = 'kv';
 const ROSTER_KEY = 'roster';
-const PREFS_KEY = 'myShifts.prefs.v1';
+/** Also read by public/theme-init.js (before the app loads) — keep the key in sync. */
+export const PREFS_KEY = 'myShifts.prefs.v1';
 
 function openDb(): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -67,6 +70,10 @@ export interface Prefs {
   codes?: CodeDef[];
   blankMeaning?: BlankMeaning;
   view?: 'calendar' | 'agenda';
+  /** Light, dark, or follow the device. Kept when a roster is removed. */
+  appearance?: Appearance;
+  /** Colour palette name. Kept when a roster is removed. */
+  palette?: Palette;
 }
 
 export function getPrefs(): Prefs {

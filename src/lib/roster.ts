@@ -107,3 +107,26 @@ function nextDay(d: ISODate): ISODate {
   const t = new Date(Date.UTC(y, m - 1, day + 1));
   return `${t.getUTCFullYear()}-${String(t.getUTCMonth() + 1).padStart(2, '0')}-${String(t.getUTCDate()).padStart(2, '0')}`;
 }
+
+/** Other people on exactly the same shift (code and start time) as this assignment. */
+export function colleaguesOn(roster: Roster, me: Person, a: Assignment): Person[] {
+  return roster.people.filter(
+    (p) => p.id !== me.id && assignmentsOn(roster, p.id, a.date).some((x) => x.kind === 'shift' && x.code === a.code && x.start === a.start),
+  );
+}
+
+/** Short text for a calendar cell or week tile; always shown with the shift icon. */
+export function shortMark(a: Assignment): string {
+  switch (a.kind) {
+    case 'shift':
+      return a.code && a.code.length <= 3 ? a.code : a.label.slice(0, 3);
+    case 'off':
+      return 'Off';
+    case 'leave':
+      return 'Leave';
+    case 'unassigned':
+      return '–';
+    default:
+      return '?';
+  }
+}

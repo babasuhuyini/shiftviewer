@@ -1,23 +1,8 @@
 import { CodeLegend } from '../components/Shift';
 import { ToneIcon } from '../components/Icons';
 import { formatLong, formatMonthYear, monthMatrix, monthsBetween, WEEKDAYS, WEEKDAYS_SHORT } from '../lib/dates';
-import { assignmentsOn, toneOf } from '../lib/roster';
+import { assignmentsOn, shortMark, toneOf } from '../lib/roster';
 import type { Assignment, Person, Roster } from '../lib/types';
-
-function shortText(a: Assignment): string {
-  switch (a.kind) {
-    case 'shift':
-      return a.code && a.code.length <= 3 ? a.code : a.label.slice(0, 3);
-    case 'off':
-      return 'Off';
-    case 'leave':
-      return 'Leave';
-    case 'unassigned':
-      return '–';
-    default:
-      return '?';
-  }
-}
 
 function describe(list: Assignment[]): string {
   if (!list.length) return 'not listed';
@@ -71,7 +56,7 @@ export function MonthCalendar({ roster, me, today }: { roster: Roster; me: Perso
                             {first && (
                               <span className="cal-mark">
                                 <ToneIcon tone={toneOf(first)} size={12} />
-                                <span className="cal-text">{shortText(first)}</span>
+                                <span className="cal-text">{shortMark(first)}</span>
                                 {list.length > 1 && <span className="cal-more">+{list.length - 1}</span>}
                               </span>
                             )}

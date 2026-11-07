@@ -6,7 +6,7 @@ import { addDays, formatLong, formatMedium, relativeLabel, todayISO } from '../l
 import { assignmentsOn, duplicateNames, groupsOn, personLabel, type DayGroup } from '../lib/roster';
 import type { Person, Roster } from '../lib/types';
 
-export function DayView({ roster, me, date }: { roster: Roster; me: Person; date: string }) {
+export function DayView({ roster, me, date, back }: { roster: Roster; me: Person; date: string; back: { href: string; label: string } }) {
   const today = todayISO();
   const { start, end } = roster.period;
   const inRange = date >= start && date <= end;
@@ -24,7 +24,7 @@ export function DayView({ roster, me, date }: { roster: Roster; me: Person; date
 
   return (
     <>
-      <TopBar title={formatMedium(date)} back={{ href: '#/', label: 'Back to my shifts' }} />
+      <TopBar title={formatMedium(date)} back={back} />
       <main className="page page-narrow day" id="main">
         <nav className="day-nav" aria-label="Change day">
           {prev >= start ? (

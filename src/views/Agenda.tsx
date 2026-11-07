@@ -2,9 +2,8 @@ import { useState } from 'react';
 import { ChevronRight } from '../components/Icons';
 import { ShiftChip, timeRange } from '../components/Shift';
 import { addDays, formatLong, formatMonthYear, parseISO, WEEKDAYS_SHORT, weekdayOf } from '../lib/dates';
-import { assignmentsOn } from '../lib/roster';
+import { assignmentsOn, colleaguesOn } from '../lib/roster';
 import type { ISODate, Person, Roster } from '../lib/types';
-import { colleaguesOn } from './Dashboard';
 
 export function Agenda({ roster, me, today }: { roster: Roster; me: Person; today: string }) {
   const [showPast, setShowPast] = useState(false);

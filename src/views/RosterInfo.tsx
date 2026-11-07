@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { ConfirmDialog, PrivacyNote, TopBar } from '../components/ui';
+import { ConfirmDialog, PrivacyNote, SettingsLink, TopBar } from '../components/ui';
 import { TrashIcon, UploadIcon, UserIcon } from '../components/Icons';
 import { CodeLegend } from '../components/Shift';
-import { formatLong, formatRange, localDateOf } from '../lib/dates';
+import { formatLong, formatRange, localDateOf, todayISO } from '../lib/dates';
 import type { Person, Roster } from '../lib/types';
 
 const FORMAT_NAMES: Record<Roster['format'], string> = { xlsx: 'Excel', xls: 'Excel (97–2003)', docx: 'Word', pdf: 'PDF', csv: 'CSV' };
@@ -14,13 +14,22 @@ const BLANK_TEXT: Record<Roster['blankMeaning'], string> = {
 
 export function RosterInfo({ roster, me, onRemove }: { roster: Roster; me: Person; onRemove: () => Promise<void> }) {
   const [confirm, setConfirm] = useState(false);
+  const today = todayISO();
+  const status = today > roster.period.end ? 'Ended' : today < roster.period.start ? 'Not started yet' : 'Current';
 
   return (
     <>
-      <TopBar title="Roster" back={{ href: '#/', label: 'Back to my shifts' }} />
-      <main className="page page-narrow" id="main">
+      <TopBar title="Roster" right={<SettingsLink inShell />} />
+      <main className="page page-narrow roster-page" id="main">
+        <div className="roster-head">
+          <h2 className="page-heading">{roster.title ?? roster.fileName}</h2>
+          <p className="muted">
+            {formatRange(roster.period.start, roster.period.end)} · <span className="status-text">{status}</span>
+          </p>
+        </div>
+
         <section className="card">
-          <h2 className="card-title">Current roster</h2>
+          <h2 className="card-title">Details</h2>
           <dl className="info-list">
             {roster.title && (
               <div>
@@ -52,7 +61,12 @@ export function RosterInfo({ roster, me, onRemove }: { roster: Roster; me: Perso
             </div>
             <div>
               <dt>Showing shifts for</dt>
-              <dd>{me.name}</dd>
+              <dd>
+                {me.name}{' '}
+                <a className="link" href="#/nurse">
+                  Change
+                </a>
+              </dd>
             </div>
           </dl>
         </section>

@@ -8,8 +8,8 @@ It only **reads** a roster. It cannot create or edit rosters, assign shifts, or 
 
 - Files are read on the device. Nothing is uploaded, and there is no server, analytics or third-party service.
 - The production build includes a Content Security Policy with `connect-src 'none'`, so the page cannot send data anywhere.
-- The confirmed roster is stored only in this browser (IndexedDB). The selected name and shift-code meanings are stored in `localStorage`.
-- **Roster → Remove roster from this device** deletes the roster and the selected name.
+- The confirmed roster is stored only in this browser (IndexedDB). The selected name, shift-code meanings and appearance choices (light/dark, colour palette) are stored in `localStorage`.
+- **Roster → Remove roster from this device** deletes the roster and the selected name. Appearance choices are kept (they contain no roster data).
 - `.gitignore` excludes `*.pdf`, `*.docx`, `*.xlsx`, `*.xls` and `*.csv`, so real rosters can't be committed by accident.
 
 ## Run locally

@@ -1,7 +1,18 @@
-import { useEffect, useRef, type ReactNode } from 'react';
-import { AlertIcon, ChevronLeft, InfoIcon, LockIcon } from './Icons';
+import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react';
+import { AlertIcon, ChevronLeft, GearIcon, InfoIcon, LockIcon } from './Icons';
 
-export function TopBar({ title, back, right }: { title: ReactNode; back?: { href: string; label: string }; right?: ReactNode }) {
+export function TopBar({
+  title,
+  back,
+  right,
+  brand,
+}: {
+  title: ReactNode;
+  back?: { href: string; label: string };
+  right?: ReactNode;
+  /** Show the small app mark before the title (Home and first run). */
+  brand?: boolean;
+}) {
   return (
     <header className="topbar">
       <div className="topbar-inner">
@@ -9,13 +20,25 @@ export function TopBar({ title, back, right }: { title: ReactNode; back?: { href
           <a className="icon-btn" href={back.href} aria-label={back.label}>
             <ChevronLeft size={22} />
           </a>
-        ) : (
+        ) : brand ? (
           <span className="brand-mark" aria-hidden="true" />
-        )}
+        ) : null}
         <h1 className="topbar-title">{title}</h1>
         <div className="topbar-right">{right}</div>
       </div>
     </header>
+  );
+}
+
+/**
+ * Gear button for Settings. With `inShell`, it is hidden on wide screens where the
+ * side navigation already has a Settings entry.
+ */
+export function SettingsLink({ inShell = false }: { inShell?: boolean }) {
+  return (
+    <a className={`icon-btn${inShell ? ' hide-with-rail' : ''}`} href="#/settings" aria-label="Settings">
+      <GearIcon size={22} />
+    </a>
   );
 }
 
@@ -83,14 +106,26 @@ export function Segmented<T extends string>({
   onChange: (v: T) => void;
   label: string;
 }) {
+  // Radio-group keyboard pattern: one tab stop, arrow keys move and select.
+  const onKey = (e: KeyboardEvent<HTMLDivElement>) => {
+    const step = e.key === 'ArrowRight' || e.key === 'ArrowDown' ? 1 : e.key === 'ArrowLeft' || e.key === 'ArrowUp' ? -1 : 0;
+    if (!step) return;
+    e.preventDefault();
+    const i = Math.max(0, options.findIndex((o) => o.value === value));
+    const next = options[(i + step + options.length) % options.length];
+    onChange(next.value);
+    const buttons = e.currentTarget.querySelectorAll<HTMLButtonElement>('button');
+    buttons[options.indexOf(next)]?.focus();
+  };
   return (
-    <div className="segmented" role="radiogroup" aria-label={label}>
-      {options.map((o) => (
+    <div className="segmented" role="radiogroup" aria-label={label} onKeyDown={onKey}>
+      {options.map((o, i) => (
         <button
           key={o.value}
           type="button"
           role="radio"
           aria-checked={value === o.value}
+          tabIndex={value === o.value || (value === null && i === 0) ? 0 : -1}
           className={value === o.value ? 'is-on' : ''}
           onClick={() => onChange(o.value)}
         >

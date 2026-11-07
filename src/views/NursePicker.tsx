@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Callout, PrivacyNote, TopBar } from '../components/ui';
+import { Callout, PrivacyNote, SettingsLink, TopBar } from '../components/ui';
 import { CheckIcon, SearchIcon, UserIcon } from '../components/Icons';
 import { Avatar } from '../components/Avatar';
 import { WelcomeMessage } from '../components/WelcomeMessage';
@@ -29,7 +29,7 @@ export function NursePicker({
 
   return (
     <>
-      <TopBar title="Choose your name" back={current ? { href: '#/', label: 'Back to my shifts' } : undefined} />
+      <TopBar title="Choose your name" back={current ? { href: '#/', label: 'Back to my shifts' } : undefined} right={current ? undefined : <SettingsLink />} />
       <main className="page page-narrow" id="main">
         <WelcomeMessage />
         <p className="step-lead">
