@@ -1,4 +1,8 @@
-import { CheckIcon, MonitorIcon, MoonIcon, SunIcon } from '../components/Icons';
+import { useState } from 'react';
+import { FEEDBACK_URL } from '../components/FeedbackPrompt';
+import { analyticsEnabled, track } from '../lib/analytics';
+import { updatePrefs } from '../lib/storage';
+import { CheckIcon, ChevronRight, MonitorIcon, MoonIcon, SunIcon } from '../components/Icons';
 import { PrivacyNote, TopBar } from '../components/ui';
 import { APPEARANCES, PALETTES, type Appearance, type ThemeChoice } from '../lib/theme';
 
@@ -19,6 +23,7 @@ export function Settings({
   /** False before a roster is imported: there is no navigation bar, so show a back button. */
   inShell: boolean;
 }) {
+  const [counts, setCounts] = useState(analyticsEnabled);
   return (
     <>
       <TopBar title="Settings" back={inShell ? undefined : { href: '#/', label: 'Back' }} />
@@ -93,6 +98,43 @@ export function Settings({
         <p className="field-help settings-saved">
           Changes apply straight away and are saved on this device only. Removing a roster keeps these choices.
         </p>
+
+        <section aria-labelledby="sends-title">
+          <h2 id="sends-title" className="section-title">
+            What this app sends
+          </h2>
+          <div className="card settings-card">
+            <label className="check">
+              <input
+                type="checkbox"
+                checked={counts}
+                onChange={(e) => {
+                  setCounts(e.target.checked);
+                  updatePrefs({ analytics: e.target.checked });
+                }}
+              />
+              <span>Share anonymous usage counts</span>
+            </label>
+            <p className="field-help">
+              When on, the app tells a counting service (GoatCounter) that it was opened and whether an import worked. That is all:
+              no roster, file name, staff name or shift is ever sent. No cookies are used. Like any website visit, the service sees
+              your device’s internet address and browser type while counting.
+            </p>
+          </div>
+        </section>
+
+        <section aria-labelledby="feedback-title">
+          <h2 id="feedback-title" className="section-title">
+            Feedback
+          </h2>
+          <a className="card settings-link" href={FEEDBACK_URL} target="_blank" rel="noopener noreferrer" onClick={() => track('feedback_opened')}>
+            <span>
+              <strong>Send feedback</strong>
+              <span className="field-help">Opens a short form in a new tab. Please don’t include names or patient details.</span>
+            </span>
+            <ChevronRight size={18} />
+          </a>
+        </section>
 
         <PrivacyNote />
       </main>

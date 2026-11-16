@@ -1,5 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { TopBar } from '../components/ui';
+import { failureEvent, track } from '../lib/analytics';
 import { buildDraft } from '../lib/interpret/draft';
 import { buildRoster } from '../lib/interpret/build';
 import { collectCodes, suggestCodes, type CodeDraft } from '../lib/interpret/codes';
@@ -25,6 +26,24 @@ import { StepLayout } from './StepLayout';
 import { StepLeave } from './StepLeave';
 import { StepReview } from './StepReview';
 import { StepTable } from './StepTable';
+
+/** Reading normally takes a second or two; past this, something is stuck. */
+const READ_TIMEOUT_MS = 60_000;
+class ReadTimeout extends Error {}
+
+/** A helpful message for failures the readers didn't anticipate (never shows raw error text). */
+function unexpectedError(file: File, timedOut: boolean): ImportError {
+  const isPdf = /\.pdf$/i.test(file.name) || file.type === 'application/pdf';
+  const hints = isPdf
+    ? [
+        'Update your browser (or your phone’s software) and try again — older browsers can’t read some PDFs.',
+        'Or use the Word or Excel version of the roster, which is read most reliably.',
+      ]
+    : ['Check that the file opens on your device, then try again.', 'If it keeps failing, try the Word or Excel version of the roster.'];
+  return timedOut
+    ? new ImportError('Reading this file took too long', `“${file.name}” couldn’t be read within a minute, so the app stopped trying.`, hints)
+    : new ImportError('The file couldn’t be read', `Something went wrong while reading “${file.name}”. Nothing was saved or changed.`, hints);
+}
 
 type Step = 'file' | 'table' | 'layout' | 'leave' | 'codes' | 'review';
 
@@ -60,6 +79,8 @@ export function ImportWizard({ existing, onCancel, onAccept }: WizardProps) {
   const [blank, setBlank] = useState<BlankMeaning | null>(null);
   const [remember, setRemember] = useState(true);
   const [saving, setSaving] = useState(false);
+  // Each read gets a number; a cancelled or superseded read is ignored when it finishes.
+  const readRun = useRef(0);
 
   const table: RawTable | null = ex?.tables.find((t) => t.id === tableId) ?? null;
   const draft = useMemo(
@@ -67,6 +88,20 @@ export function ImportWizard({ existing, onCancel, onAccept }: WizardProps) {
     [table, mapping, period],
   );
   const leaveMap = useMemo(() => leaveCells(proposals, gaps), [proposals, gaps]);
+
+  // Tell keyboard and screen-reader users the step changed: focus its heading.
+  const firstStep = useRef(true);
+  useEffect(() => {
+    if (firstStep.current) {
+      firstStep.current = false;
+      return;
+    }
+    const h = document.getElementById('step-title');
+    if (h) {
+      h.setAttribute('tabindex', '-1');
+      h.focus({ preventScroll: true });
+    }
+  }, [step]);
 
   const steps: Step[] = ['file', ...(ex && ex.tables.length > 1 ? (['table'] as Step[]) : []), 'layout', ...(proposals.length ? (['leave'] as Step[]) : []), 'codes', 'review'];
   const go = (s: Step) => {
@@ -91,29 +126,41 @@ export function ImportWizard({ existing, onCancel, onAccept }: WizardProps) {
   }
 
   async function handleFile(f: File, delimiter?: string) {
+    const run = ++readRun.current;
     setFile(f);
     setError(null);
     setBusy(true);
+    if (delimiter === undefined) track('import_started');
+    let timer: ReturnType<typeof setTimeout> | undefined;
     try {
-      const result = await readRosterFile(f, { delimiter });
+      const result = await Promise.race([
+        readRosterFile(f, { delimiter }),
+        new Promise<never>((_, reject) => {
+          timer = setTimeout(() => reject(new ReadTimeout()), READ_TIMEOUT_MS);
+        }),
+      ]);
+      if (run !== readRun.current) return;
       setEx(result);
       // Prefer a table that looks like a roster grid.
       const best = result.tables.find((t) => detectGrid(t, result.contextText, result.fileName)) ?? result.tables[0];
       selectTable(result, best);
       go(result.tables.length > 1 && delimiter === undefined ? 'table' : 'layout');
     } catch (e) {
-      setError(
-        e instanceof ImportError
-          ? e
-          : new ImportError('The file couldn’t be read', 'Something went wrong while reading this file.', [
-              'Check that the file opens on your computer, then try again.',
-              'If it keeps failing, try the Word or Excel version of the roster.',
-            ]),
-      );
+      if (run !== readRun.current) return;
+      const shown = e instanceof ImportError ? e : unexpectedError(f, e instanceof ReadTimeout);
+      track(e instanceof ImportError ? failureEvent(e.title, false) : failureEvent('', e instanceof ReadTimeout));
+      setError(shown);
       go('file');
     } finally {
-      setBusy(false);
+      clearTimeout(timer);
+      if (run === readRun.current) setBusy(false);
     }
+  }
+
+  /** Stop waiting for the current read (the reader may finish in the background; its result is ignored). */
+  function cancelRead() {
+    readRun.current++;
+    setBusy(false);
   }
 
   function continueFromLayout() {
@@ -165,6 +212,7 @@ export function ImportWizard({ existing, onCancel, onAccept }: WizardProps) {
         updatePrefs({ codes: [...others, ...confirmedCodes], blankMeaning: blank ?? prefs.blankMeaning });
       }
       await onAccept(built.roster);
+      track('import_succeeded');
     } finally {
       setSaving(false);
     }
@@ -187,7 +235,7 @@ export function ImportWizard({ existing, onCancel, onAccept }: WizardProps) {
           </ol>
         </nav>
 
-        {step === 'file' && <StepFile existing={existing} busy={busy} error={error} onFile={handleFile} onCancel={onCancel} />}
+        {step === 'file' && <StepFile existing={existing} busy={busy} error={error} onFile={handleFile} onCancelRead={cancelRead} onCancel={onCancel} />}
 
         {step === 'table' && ex && (
           <StepTable

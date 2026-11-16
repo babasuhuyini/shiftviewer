@@ -11,3 +11,13 @@ createRoot(document.getElementById('root')!).render(
     <App />
   </StrictMode>,
 );
+
+// Offline support for the saved (home-screen) app: the service worker keeps a copy of the
+// app's own files on this device. It never touches roster data and sends nothing anywhere.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js').catch(() => {
+      /* offline support is optional — the app works without it */
+    });
+  });
+}

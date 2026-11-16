@@ -1,4 +1,5 @@
 import { AvatarStack } from '../components/Avatar';
+import { FeedbackPrompt } from '../components/FeedbackPrompt';
 import { ChevronRight, ClockIcon, ToneIcon, UploadIcon, UsersIcon } from '../components/Icons';
 import { overnightNote, ShiftChip, timeRange } from '../components/Shift';
 import { Callout, SettingsLink, TopBar } from '../components/ui';
@@ -197,6 +198,8 @@ export function Home({ roster, me }: { roster: Roster; me: Person }) {
             </p>
           </Callout>
         )}
+
+        <FeedbackPrompt />
       </main>
     </>
   );

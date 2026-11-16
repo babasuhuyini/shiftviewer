@@ -19,17 +19,17 @@
 /* 1. Palettes — light */
 :root,
 [data-palette='stone'] {
-  --bg: #f5f4f1;
+  --bg: #f2f2f7;
   --surface: #ffffff;
-  --surface-2: #faf9f7;
-  --surface-3: #eeece8;
-  --ink: #1d1c1a;
-  --ink-2: #4a4743;
-  --ink-3: #69655f;
-  --line: #e5e2dc;
-  --line-strong: #d2cec6;
-  --brand: #2f4a5c;
-  --brand-2: #3b5b70;
+  --surface-2: #f7f7fa;
+  --surface-3: #e9e9ee;
+  --ink: #111114;
+  --ink-2: #3c3c43;
+  --ink-3: #636368;
+  --line: #e3e3e8;
+  --line-strong: #c7c7cc;
+  --brand: #0a66d0;
+  --brand-2: #0b5cbb;
   --brand-ink: #ffffff;
 }
 [data-palette='rose'] {
@@ -92,18 +92,18 @@
 /* 1. Palettes — dark */
 [data-theme='dark'],
 [data-theme='dark'] [data-palette='stone'] {
-  --bg: #151514;
-  --surface: #1d1d1b;
-  --surface-2: #232321;
-  --surface-3: #2c2b29;
-  --ink: #f2f0ec;
-  --ink-2: #d2cec7;
-  --ink-3: #a7a29a;
-  --line: #31302d;
-  --line-strong: #474540;
-  --brand: #a9c6d8;
-  --brand-2: #c0d6e4;
-  --brand-ink: #12222c;
+  --bg: #000000;
+  --surface: #1c1c1e;
+  --surface-2: #232326;
+  --surface-3: #2c2c2e;
+  --ink: #f5f5f7;
+  --ink-2: #d1d1d6;
+  --ink-3: #a1a1a8;
+  --line: #2c2c2e;
+  --line-strong: #48484a;
+  --brand: #5eadff;
+  --brand-2: #7cbcff;
+  --brand-ink: #001a33;
 }
 [data-theme='dark'][data-palette='rose'],
 [data-theme='dark'] [data-palette='rose'] {
@@ -202,13 +202,15 @@
   --shadow: 0 1px 2px rgb(20 20 20 / 0.04), 0 4px 14px rgb(20 20 20 / 0.04);
   --shadow-lg: 0 2px 6px rgb(20 20 20 / 0.06), 0 16px 36px rgb(20 20 20 / 0.08);
 
-  --radius: 16px;
+  --radius: 14px;
   --radius-sm: 12px;
   --tap: 44px;
-  --nav-h: 64px;
+  --nav-h: 56px;
   --rail-w: 92px;
-  --font: ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --serif: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
+  /* System font everywhere (San Francisco on Apple devices). The serif is kept only for the personal note. */
+  --font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --serif: var(--font);
+  --note: 'Fraunces Variable', Georgia, 'Times New Roman', serif;
   --mono: ui-monospace, 'SF Mono', 'Cascadia Mono', Consolas, monospace;
 }
 
@@ -637,6 +639,12 @@ fieldset.field-card {
 .callout > svg {
   flex: none;
   margin-top: 2px;
+}
+.callout p {
+  overflow-wrap: anywhere;
+}
+.dropzone.is-busy {
+  gap: 16px;
 }
 .callout p + p,
 .callout p + ul {
@@ -1677,7 +1685,7 @@ fieldset.field-card {
   color: var(--brand);
 }
 .love-note-text {
-  font-family: var(--serif);
+  font-family: var(--note);
   font-style: italic;
   font-size: 1.08rem;
   line-height: 1.4;
@@ -2288,16 +2296,21 @@ fieldset.field-card {
 .app-nav-item:hover {
   color: var(--ink);
 }
-.app-nav-item:hover .app-nav-icon {
-  background: var(--surface-3);
+@media (min-width: 900px) {
+  .app-nav-item:hover .app-nav-icon {
+    background: var(--surface-3);
+  }
 }
 /* Selected: accent colour + filled pill + heavier label (not colour alone). */
 .app-nav-item[aria-current='page'] {
   color: var(--brand);
   font-weight: 750;
 }
-.app-nav-item[aria-current='page'] .app-nav-icon {
-  background: var(--accent-soft);
+/* The filled pill is for the side rail; the phone tab bar stays flat. */
+@media (min-width: 900px) {
+  .app-nav-item[aria-current='page'] .app-nav-icon {
+    background: var(--accent-soft);
+  }
 }
 .app-nav-item:focus-visible {
   outline-offset: -3px;
@@ -2796,6 +2809,177 @@ fieldset.field-card {
   .option-row.three .option-hint {
     display: none;
   }
+}
+
+/* ───────────────────────── System-style finish ───────────────────────── */
+/* Grouped surfaces are separated by tone, not outlines; titles are large and bold. */
+.card,
+.field-card,
+.preview-card,
+.row-list,
+.people-pick,
+.next-shift,
+.love-note,
+.rest-group,
+.leave-card,
+.code-card {
+  border-color: transparent;
+  box-shadow: none;
+}
+.page-heading,
+.next-date,
+.next-empty-title,
+.step-title,
+.welcome h1,
+.day-nav-title h2 {
+  font-weight: 750;
+  letter-spacing: -0.022em;
+}
+.next-weekday {
+  font-style: normal;
+  font-weight: 600;
+}
+.step-title:focus {
+  outline: none;
+}
+.topbar {
+  border-bottom-color: color-mix(in srgb, var(--line-strong) 55%, transparent);
+}
+/* Large title on the main tabs (no back button). */
+.shell-content .topbar-inner > .topbar-title:first-child,
+.shell-content .brand-mark + .topbar-title {
+  font-size: 1.7rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+.shell-content .topbar-inner {
+  min-height: 60px;
+}
+.btn {
+  font-weight: 600;
+}
+.btn-primary,
+.btn-block {
+  min-height: 50px;
+  border-radius: 14px;
+}
+.app-nav-item {
+  font-size: 0.7rem;
+}
+.segmented button {
+  min-height: 40px;
+}
+.check {
+  min-height: var(--tap);
+  align-items: center;
+}
+.sticky-actions .actions {
+  margin-top: 0;
+}
+.sticky-actions .actions-help {
+  margin: 0 0 8px;
+  text-align: left;
+  color: var(--warn);
+  font-weight: 600;
+}
+/* Import: "Is this right?" summary */
+.found-card {
+  display: grid;
+  gap: 10px;
+}
+.found-big {
+  font-size: 1.3rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+.found-card .good-line {
+  margin-top: 0;
+  font-size: 0.92rem;
+}
+.sample-grid {
+  display: grid;
+  gap: 3px;
+  font-size: 0.78rem;
+}
+.sample-row {
+  display: grid;
+  grid-template-columns: minmax(0, 2.6fr) repeat(7, minmax(0, 1fr));
+  gap: 3px;
+  align-items: center;
+}
+.sample-head {
+  color: var(--ink-3);
+  font-weight: 700;
+  text-align: center;
+  white-space: nowrap;
+}
+.sample-name {
+  font-weight: 650;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.sample-cell {
+  min-height: 28px;
+  display: grid;
+  place-items: center;
+  border-radius: 6px;
+  background: var(--surface-3);
+  font-family: var(--mono);
+  font-weight: 700;
+  overflow: hidden;
+}
+
+/* Feedback and "what this app sends" */
+.feedback-prompt {
+  display: grid;
+  gap: 8px;
+  margin-top: 28px;
+  padding: 16px;
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.feedback-title {
+  font-weight: 700;
+}
+.feedback-text {
+  font-size: 0.9rem;
+  color: var(--ink-2);
+}
+.feedback-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.feedback-actions .btn {
+  min-height: var(--tap);
+}
+.settings-card {
+  margin-top: 0;
+}
+.settings-card .check {
+  margin-top: 0;
+  font-weight: 600;
+}
+.settings-link {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 0;
+  text-decoration: none;
+}
+.settings-link > span {
+  display: grid;
+}
+.settings-link .field-help {
+  margin-top: 2px;
+}
+.settings-link svg {
+  flex: none;
+  color: var(--ink-3);
 }
 
 /* ───────────────────────── Shift tones ───────────────────────── */

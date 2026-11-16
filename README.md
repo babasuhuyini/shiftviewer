@@ -7,9 +7,13 @@ It only **reads** a roster. It cannot create or edit rosters, assign shifts, or 
 ## Privacy
 
 - Files are read on the device. Nothing is uploaded, and there is no server, analytics or third-party service.
-- The production build includes a Content Security Policy with `connect-src 'none'`, so the page cannot send data anywhere.
+- Roster files and their contents are never sent anywhere.
+- The only thing the app sends is an anonymous usage count (GoatCounter): a fixed event name such as `app_opened` or `import_succeeded`, with no file names, roster data, names or free text. It can be turned off in Settings. See `src/lib/analytics.ts`.
+- The production build's Content Security Policy allows outgoing connections to that one counting address only.
+- Feedback is a link to a Tally form that opens in a new tab; the app itself sends nothing to it.
 - The confirmed roster is stored only in this browser (IndexedDB). The selected name, shift-code meanings and appearance choices (light/dark, colour palette) are stored in `localStorage`.
 - **Roster → Remove roster from this device** deletes the roster and the selected name. Appearance choices are kept (they contain no roster data).
+- A service worker keeps a copy of the app's own files on the device so the saved home-screen app opens offline. It handles only the app's files, never roster data, and sends nothing.
 - `.gitignore` excludes `*.pdf`, `*.docx`, `*.xlsx`, `*.xls` and `*.csv`, so real rosters can't be committed by accident.
 
 ## Run locally

@@ -74,6 +74,10 @@ export interface Prefs {
   appearance?: Appearance;
   /** Colour palette name. Kept when a roster is removed. */
   palette?: Palette;
+  /** Anonymous usage counts (see lib/analytics.ts). On unless set to false. */
+  analytics?: boolean;
+  /** When to show the occasional feedback question. Lives in this browser only. */
+  feedback?: { opens?: number; lastPrompt?: string; done?: boolean; never?: boolean };
 }
 
 export function getPrefs(): Prefs {

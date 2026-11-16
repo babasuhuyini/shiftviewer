@@ -1,5 +1,8 @@
-import * as pdfjs from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+// The "legacy" build carries its own polyfills. The standard build needs very recent
+// browsers (Map.getOrInsertComputed, Promise.try…) and fails or hangs on phones that
+// haven't updated lately — keep the legacy build unless that is re-tested.
+import * as pdfjs from 'pdfjs-dist/legacy/build/pdf.mjs';
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 import { ImportError, type Extraction, type RawTable } from '../types';
 import { pageToTable, type PdfItem } from './pdfGrid';
 
@@ -19,7 +22,7 @@ interface TextItemLike {
 }
 
 export async function readPdf(buf: ArrayBuffer, fileName: string): Promise<Extraction> {
-  let doc: pdfjs.PDFDocumentProxy;
+  let doc: Awaited<ReturnType<typeof pdfjs.getDocument>['promise']>;
   try {
     doc = await pdfjs.getDocument({
       data: new Uint8Array(buf),
