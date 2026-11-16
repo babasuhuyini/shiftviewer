@@ -1,6 +1,7 @@
+import { useState } from 'react';
 import { Callout, Segmented } from '../components/ui';
 import { CheckIcon } from '../components/Icons';
-import { formatDayMonth, MONTHS } from '../lib/dates';
+import { formatDayMonth, MONTHS, WEEKDAYS_SHORT, weekdayOf } from '../lib/dates';
 import { DELIMITERS } from '../lib/parse/delimiters';
 import {
   colLetter,
@@ -72,15 +73,112 @@ export function StepLayout(props: Props) {
     errors.length === 0 &&
     (mapping.kind === 'list' || (mapping.dateCols.length > 0 && periodConfirmed));
 
+  // Most rosters are read correctly: show what was found and ask one question.
+  // The detailed controls open only when something looks wrong (or the app isn't sure).
+  const gridCheck = mapping.kind === 'grid' ? weekdayCheck(table, mapping, period) : null;
+  const confident =
+    mapping.kind === 'grid' &&
+    !!draft &&
+    peopleCount > 0 &&
+    errors.length === 0 &&
+    mapping.dateCols.length > 0 &&
+    period.source !== 'none' &&
+    !table.estimated &&
+    (!gridCheck || gridCheck.mismatches === 0);
+  const [details, setDetails] = useState(!confident);
+
   const switchLayout = (kind: 'grid' | 'list') => {
     if (kind === mapping.kind) return;
     if (kind === 'grid') onMapping(detectGrid(table, extraction.contextText, extraction.fileName)?.mapping ?? emptyGrid());
     else onMapping(detectList(table) ?? defaultList(table));
   };
 
+  if (!details && confident && draft) {
+    const days = draft.dates.slice(0, 7);
+    const sample = draft.people.slice(0, 3);
+    return (
+      <section aria-labelledby="step-title">
+        <h2 id="step-title" className="step-title">Is this right?</h2>
+        <p className="step-lead">Compare this with your roster. Nothing is saved until the last step.</p>
+
+        <div className="field-card found-card">
+          <p className="found-big">
+            {peopleCount} staff, {draft.dates.length} days, {periodLabel(period)}
+          </p>
+          {gridCheck && gridCheck.checked > 0 && (
+            <p className="good-line">
+              <CheckIcon size={16} /> The weekday letters in the roster match {periodLabel(period)}.
+            </p>
+          )}
+          <div className="sample-grid" role="table" aria-label="Start of the roster as it was read">
+            <div role="row" className="sample-row">
+              <span role="columnheader">
+                <span className="visually-hidden">Name</span>
+              </span>
+              {days.map((d) => (
+                <span key={d} role="columnheader" className="sample-head">
+                  {WEEKDAYS_SHORT[weekdayOf(d)].slice(0, 1)} {Number(d.slice(8))}
+                </span>
+              ))}
+            </div>
+            {sample.map((person) => (
+              <div key={person.key} role="row" className="sample-row">
+                <span role="rowheader" className="sample-name">
+                  {person.name}
+                </span>
+                {days.map((d) => {
+                  const raw = person.entries.find((e) => e.date === d)?.raw ?? '';
+                  return (
+                    <span key={d} role="cell" className="sample-cell">
+                      {raw || <span className="visually-hidden">empty</span>}
+                    </span>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+          <p className="field-help">
+            The first {sample.length === 1 ? 'name' : `${sample.length} names`} and first {days.length} days, exactly as written in the
+            file.
+          </p>
+        </div>
+
+        {[...extraction.warnings, ...table.notes].map((w) => (
+          <Callout key={w} tone="info">
+            <p>{w}</p>
+          </Callout>
+        ))}
+        {warnings.map((i) => (
+          <Callout key={i.message} tone={i.level === 'warning' ? 'warning' : 'info'}>
+            <p>{i.message}</p>
+          </Callout>
+        ))}
+
+        <div className="action-stack">
+          <button
+            type="button"
+            className="btn btn-primary btn-block"
+            onClick={() => {
+              onPeriodConfirmed(true);
+              onNext();
+            }}
+          >
+            Yes, that’s right
+          </button>
+          <button type="button" className="btn btn-block" onClick={() => setDetails(true)}>
+            Something’s wrong
+          </button>
+          <button type="button" className="btn btn-ghost btn-block" onClick={onBack}>
+            Back
+          </button>
+        </div>
+      </section>
+    );
+  }
+
   return (
     <section aria-labelledby="step-title">
-      <h2 id="step-title" className="step-title">Check how the roster was read</h2>
+      <h2 id="step-title" className="step-title">{confident ? 'What needs changing?' : 'Check how the roster was read'}</h2>
       <p className="step-lead">
         Make sure the names, dates and month are right. Nothing is saved until the last step.
       </p>
@@ -150,17 +248,21 @@ export function StepLayout(props: Props) {
 
       <Preview table={table} mapping={mapping} period={period} />
 
-      <div className="actions sticky-actions">
-        <button type="button" className="btn btn-ghost" onClick={onBack}>
-          Back
-        </button>
-        <button type="button" className="btn btn-primary" disabled={!canContinue} onClick={onNext}>
-          Continue
-        </button>
+      <div className="sticky-actions">
+        {!canContinue && mapping.kind === 'grid' && !periodConfirmed && mapping.dateCols.length > 0 && (
+          <p className="actions-help" role="status">
+            Tick the box under “Month and year” to continue.
+          </p>
+        )}
+        <div className="actions">
+          <button type="button" className="btn btn-ghost" onClick={onBack}>
+            Back
+          </button>
+          <button type="button" className="btn btn-primary" disabled={!canContinue} onClick={onNext}>
+            Continue
+          </button>
+        </div>
       </div>
-      {!canContinue && mapping.kind === 'grid' && !periodConfirmed && mapping.dateCols.length > 0 && (
-        <p className="actions-help">Confirm the month and year to continue.</p>
-      )}
     </section>
   );
 

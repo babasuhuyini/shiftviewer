@@ -148,7 +148,7 @@ export function Spinner({ label }: { label: string }) {
 export function PrivacyNote() {
   return (
     <p className="privacy-note">
-      <LockIcon size={14} /> Your roster is read and kept only on this device. Nothing is uploaded.
+      <LockIcon size={14} /> Your roster is read and kept only on this device. It is never uploaded.
     </p>
   );
 }

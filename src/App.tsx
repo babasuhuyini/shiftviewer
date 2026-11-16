@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Shell, type Tab } from './components/Shell';
+import { noteAppOpened } from './components/FeedbackPrompt';
 import { Spinner } from './components/ui';
+import { track } from './lib/analytics';
 import { ImportWizard } from './import/ImportWizard';
 import { findSelected, toSelected } from './lib/roster';
 import { clearRoster, getPrefs, loadRoster, saveRoster, updatePrefs } from './lib/storage';
@@ -113,6 +115,8 @@ export function App() {
     loadRoster().then((r) => {
       setRoster(r);
       setLoading(false);
+      track('app_opened');
+      if (r) noteAppOpened();
     });
   }, []);
 

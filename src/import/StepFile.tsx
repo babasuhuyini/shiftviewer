@@ -10,12 +10,14 @@ export function StepFile({
   busy,
   error,
   onFile,
+  onCancelRead,
   onCancel,
 }: {
   existing: Roster | null;
   busy: boolean;
   error: ImportError | null;
   onFile: (f: File) => void;
+  onCancelRead: () => void;
   onCancel: () => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
@@ -31,7 +33,7 @@ export function StepFile({
     <section aria-labelledby="step-title">
       <h2 id="step-title" className="step-title">Choose your roster file</h2>
       <p className="step-lead">
-        Pick the department roster as an Excel, Word, PDF or CSV file. You’ll check how it was read before anything is
+        Pick the department roster as an Excel, Word, PDF or CSV file (up to 25 MB). You’ll check how it was read before anything is
         saved, and the original file is never changed.
       </p>
 
@@ -60,6 +62,9 @@ export function StepFile({
       {busy ? (
         <div className="dropzone is-busy">
           <Spinner label="Reading the file on this device…" />
+          <button type="button" className="btn btn-small" onClick={onCancelRead}>
+            Stop
+          </button>
         </div>
       ) : (
         <label

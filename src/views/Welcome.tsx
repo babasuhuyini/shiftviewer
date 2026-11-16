@@ -22,7 +22,7 @@ export function Welcome() {
           </a>
           <p className="welcome-privacy">
             <LockIcon size={16} />
-            <span>The file is read in this browser and kept only on this device. Nothing is uploaded or shared.</span>
+            <span>The file is read in this browser and kept only on this device. Your roster is never uploaded or shared.</span>
           </p>
         </div>
 

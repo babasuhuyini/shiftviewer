@@ -20,7 +20,7 @@ export const DEFAULT_PALETTE: Palette = 'stone';
 export const DEFAULT_APPEARANCE: Appearance = 'system';
 
 export const PALETTES: PaletteInfo[] = [
-  { id: 'stone', name: 'Stone', description: 'Soft greys with a slate accent' },
+  { id: 'stone', name: 'Classic', description: 'Clean greys with a blue accent' },
   { id: 'rose', name: 'Rose & plum', description: 'The original warm pink and plum' },
   { id: 'sage', name: 'Sage', description: 'Calm green-grey' },
   { id: 'ocean', name: 'Ocean', description: 'Cool, quiet blue' },
